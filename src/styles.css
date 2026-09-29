@@ -85,3 +85,37 @@ select option { background: #15141b; color: var(--text); }
   .card { padding: 20px; border-radius: 16px; }
   .row { gap: 10px; }
 }
+
+/* Sessions Active */
+.sessions {
+  width: 100%; max-width: 540px; margin-bottom: 16px; padding: 14px 18px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+.sessions-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.sessions-head h2 { margin: 0; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.sessions-clock { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sessions-clock time { color: var(--text); font-weight: 600; }
+.sessions-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.session {
+  display: grid; grid-template-columns: auto 1fr; column-gap: 8px; row-gap: 2px; align-items: center;
+  padding: 10px 12px; background: var(--field); border: 1px solid var(--border); border-radius: 10px;
+}
+.session.is-active { border-color: rgba(74, 222, 128, 0.28); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #5d5b68; grid-row: 1; }
+.is-active .dot { background: #4ade80; animation: session-pulse 2.2s ease-out infinite; }
+.session-name { font-size: 0.85rem; font-weight: 600; }
+.session-time { grid-column: 1 / -1; font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.session-status { grid-column: 1 / -1; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; color: #6f6d7a; }
+.is-active .session-status { color: #4ade80; }
+@keyframes session-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.45); }
+  70%, 100% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .is-active .dot { animation: none; } }
+@media (max-width: 480px) {
+  .sessions { padding: 12px 14px; }
+  .sessions-list { grid-template-columns: 1fr; gap: 8px; }
+  .session { grid-template-columns: auto 1fr auto auto; padding: 10px 12px; column-gap: 10px; }
+  .session-time, .session-status { grid-column: auto; }
+}
