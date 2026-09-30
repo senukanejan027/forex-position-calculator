@@ -1,0 +1,29 @@
+.ecal { width: 100%; max-width: 1080px; }
+.ecal-head { margin-bottom: 18px; }
+.ecal-head h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 4vw, 1.9rem); font-weight: 700; letter-spacing: -0.03em; }
+.ecal-head p { margin: 0; font-size: 0.92rem; color: var(--muted); line-height: 1.5; }
+.ecal-head p strong { color: var(--text); font-weight: 600; }
+
+.ecal-frame {
+  position: relative; width: 100%; height: clamp(560px, 78vh, 920px); overflow: hidden;
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.ecal-iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; opacity: 0; transition: opacity 0.5s ease; }
+.ecal-iframe.ready { opacity: 1; }
+
+.ecal-skeleton { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px; transition: opacity 0.4s ease, visibility 0s linear 0.4s; }
+.ecal-skeleton.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.sk { display: block; border-radius: 8px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(167,139,250,0.1) 50%, rgba(255,255,255,0.04) 75%); background-size: 200% 100%; animation: ecal-shimmer 1.6s ease-in-out infinite; }
+.sk-bar { height: 38px; width: 45%; }
+.sk-row { height: 44px; }
+.ecal-slow { margin: auto 0 0; font-size: 0.85rem; color: var(--muted); text-align: center; }
+.ecal-slow a { color: var(--accent); }
+@keyframes ecal-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+.ecal-credit { margin: 12px 0 0; text-align: center; font-size: 0.78rem; color: #6f6d7a; }
+.ecal-credit a { color: #8b8998; text-decoration: none; }
+.ecal-credit a:hover { color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } .ecal-iframe, .ecal-skeleton { transition: none; } }
+@media (max-width: 560px) { .ecal-frame { height: clamp(520px, 80vh, 760px); border-radius: 12px; } }

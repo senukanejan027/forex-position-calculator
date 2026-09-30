@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react'
 
 // Hash routing keeps refreshes working on GitHub Pages (no server rewrites needed).
-const read = () => (window.location.hash.startsWith('#/journal') ? 'journal' : 'calculator')
+export function routeFromHash(hash) {
+  const h = hash.replace(/^#\/?/, '')
+  if (h.startsWith('journal')) return 'journal'
+  if (h.startsWith('economic-calendar')) return 'calendar'
+  return 'calculator'
+}
+const read = () => routeFromHash(window.location.hash)
 
 export default function useHashRoute() {
   const [route, setRoute] = useState(read)

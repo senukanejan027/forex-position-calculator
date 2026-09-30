@@ -45,7 +45,7 @@ export const instruments = {
 export const instrumentKeys = Object.keys(instruments)
 
 export const DEFAULTS = {
-  balance: '10000',
+  balance: '2500',
   risk: '1',
   stopLoss: '20',
   pair: 'EURUSD',

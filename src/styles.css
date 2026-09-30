@@ -121,8 +121,8 @@ select option { background: #15141b; color: var(--text); }
 }
 
 /* Navigation */
-.topnav { display: flex; gap: 4px; padding: 4px; margin-bottom: 32px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
-.topnav a { padding: 9px 16px; border-radius: 9px; color: var(--muted); font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: color 0.15s, background 0.15s; }
+.topnav { display: flex; gap: 4px; padding: 4px; overflow-x: auto; max-width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+.topnav a { white-space: nowrap; padding: 9px 16px; border-radius: 9px; color: var(--muted); font-size: 0.85rem; font-weight: 600; text-decoration: none; transition: color 0.15s, background 0.15s; }
 .topnav a:hover { color: var(--text); }
 .topnav a.active { color: var(--text); background: var(--accent-soft); }
 
@@ -240,4 +240,18 @@ input[readonly] { color: var(--muted); }
   .topnav { width: 100%; } .topnav a { flex: 1; text-align: center; padding: 10px 8px; }
   .btn-row .btn { flex: 1 1 calc(50% - 5px); }
   .modal-footer .btn { flex: 1; }
+}
+
+/* SNFX brand + top bar */
+.topbar { width: 100%; max-width: 1080px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 32px; }
+.brand { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
+.brand-mark { position: relative; font-size: 1.45rem; font-weight: 800; letter-spacing: 0.06em; line-height: 1; padding-bottom: 6px; }
+.brand-mark::after { content: ''; position: absolute; left: 0; bottom: 0; width: 42%; height: 2px; border-radius: 2px; background: var(--accent); transition: width 0.25s ease; }
+.brand:hover .brand-mark::after { width: 100%; }
+.brand-beta { align-self: flex-start; margin-top: 1px; padding: 2px 7px; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 999px; }
+.ecal-wrap { width: 100%; display: flex; justify-content: center; }
+.ecal-wrap[hidden] { display: none; }
+@media (max-width: 560px) {
+  .topbar { flex-direction: column; align-items: flex-start; gap: 14px; margin-bottom: 24px; }
+  .topnav a { font-size: 0.78rem; padding: 10px 6px; }
 }
