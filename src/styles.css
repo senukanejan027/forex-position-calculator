@@ -520,3 +520,69 @@ textarea { min-height: 92px; padding: 12px 14px; font: 500 0.95rem/1.5 var(--fon
   .session-time { grid-column: 2; grid-row: 2; }
   .session-status { grid-column: 3; grid-row: 1 / 3; }
 }
+
+/* 12 -- Accounts and cloud sync -------------------------------------- */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.9s linear infinite; }
+code { padding: 1px 6px; border-radius: 6px; background: var(--surface-2); font: 0.85em ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.auth-wrap { display: flex; justify-content: center; padding: clamp(8px, 4vh, 48px) 0; }
+.auth-card { width: 100%; max-width: 440px; padding: 32px; }
+.auth-head { margin-bottom: 24px; }
+.auth-head h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
+.auth-head p { margin-top: 6px; color: var(--text-2); }
+.auth-form { display: grid; gap: 18px; }
+.auth-row { display: flex; justify-content: flex-end; margin-top: -6px; font-size: 0.85rem; }
+.auth-submit { width: 100%; min-height: 48px; }
+.auth-foot { margin-top: 22px; text-align: center; font-size: 0.88rem; color: var(--text-2); }
+.auth-success { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: var(--success-soft); border: 1px solid var(--success-line); border-radius: var(--r-md); line-height: 1.55; }
+.auth-success svg { flex: none; margin-top: 2px; color: var(--success); }
+.auth-loading { display: grid; gap: 12px; max-width: 520px; margin: 0 auto; padding-top: 24px; }
+.sk-title { height: 32px; width: 40%; }
+.control-toggle { margin-right: 6px; flex: none; }
+
+.auth-links { display: flex; align-items: center; gap: 6px; }
+.account-sk { display: block; width: 120px; height: 34px; }
+.account { position: relative; }
+.account-btn {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 260px; min-height: 38px; padding: 0 10px 0 12px;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--r-md);
+  font: 600 0.82rem var(--font); cursor: pointer; transition: border-color 0.15s, background-color 0.15s;
+}
+.account-btn:hover { border-color: var(--border-strong); background: var(--surface-hover); }
+.account-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-chev { flex: none; color: var(--text-3); }
+.menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 60; min-width: 240px; max-width: 86vw; padding: 6px; background: var(--surface-3); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow-md); animation: fade-in 0.12s ease-out both; }
+.menu-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.menu-name { font-size: 0.9rem; font-weight: 650; }
+.menu-email { font-size: 0.78rem; color: var(--text-2); overflow-wrap: anywhere; }
+.menu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; background: transparent; color: var(--text); border: 0; border-radius: 10px; font: 600 0.88rem var(--font); text-align: left; cursor: pointer; transition: background-color 0.15s; }
+.menu-item:hover { background: var(--surface-2); }
+
+.sync { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--text-2); white-space: nowrap; transition: color 0.2s, background-color 0.2s, border-color 0.2s; }
+.sync-synced { color: var(--success); background: var(--success-soft); border-color: var(--success-line); }
+.sync-offline { color: var(--warning); }
+.sync-error { color: var(--danger); background: var(--danger-soft); border-color: var(--danger-line); }
+.sync-count { font-weight: 500; color: var(--text-2); }
+.sync-retry { padding: 0; background: none; border: 0; color: var(--accent-text); font: 700 0.8rem var(--font); text-decoration: underline; cursor: pointer; }
+.journal-tools { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.skeleton-card { display: grid; gap: 10px; padding: 20px; }
+.progress { height: 8px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; }
+.progress span { display: block; height: 100%; background: var(--accent); transition: width 0.2s var(--ease); }
+
+.cloud-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0 0; }
+.cloud-list > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; }
+.cloud-list dt { font-size: 0.78rem; font-weight: 550; color: var(--text-2); }
+.cloud-list dd { margin: 0; font-weight: 650; overflow-wrap: anywhere; }
+.cloud-list .sync { align-self: flex-start; }
+.cloud-legacy { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding: 12px 14px; color: var(--text-2); border: 1px dashed var(--border-strong); border-radius: var(--r-md); }
+.cloud-legacy p { flex: 1 1 220px; font-size: 0.88rem; }
+
+@media (max-width: 560px) {
+  .auth-card { padding: 24px 20px; }
+  .account-email, .account-chev, .auth-create { display: none; }
+  .account-btn { padding: 0 10px; }
+  .journal-tools { justify-content: flex-start; width: 100%; }
+  .journal-tools .tabs { flex: 1 1 100%; }
+  .cloud-list { grid-template-columns: minmax(0, 1fr); }
+}

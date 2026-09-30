@@ -6,6 +6,12 @@ import TradingJournal from './components/TradingJournal/TradingJournal'
 import EconomicCalendar from './components/EconomicCalendar/EconomicCalendar'
 import ThemeToggle from './components/ThemeToggle'
 import MarketStatus from './components/MarketStatus'
+import AccountMenu from './components/AccountMenu'
+import AuthGuard from './components/AuthGuard'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import ResetPassword from './pages/ResetPassword'
+import { useAuth } from './context/AuthContext'
 import useHashRoute from './lib/useHashRoute'
 import useTheme from './lib/useTheme'
 
@@ -32,8 +38,13 @@ function Brand() {
 }
 
 export default function App() {
-  const route = useHashRoute()
+  const hashRoute = useHashRoute()
+  const { user, loading, recovery, configured } = useAuth()
+  // Arriving from a password-reset email always lands on the new-password form.
+  const route = recovery ? 'reset' : hashRoute
   const [theme, toggleTheme] = useTheme()
+  // Already signed in: the sign-in / sign-up pages have nothing to offer.
+  useEffect(() => { if (user && !recovery && (hashRoute === 'login' || hashRoute === 'signup' || hashRoute === 'reset')) window.location.hash = '#/journal' }, [user, recovery, hashRoute])
   // Once opened, the calendar stays mounted (hidden) so the widget is not reloaded on every visit.
   const [calendarSeen, setCalendarSeen] = useState(route === 'calendar')
   useEffect(() => { if (route === 'calendar') setCalendarSeen(true) }, [route])
@@ -43,7 +54,7 @@ export default function App() {
       <Icon size={18} aria-hidden="true" /><span>{label}</span>
     </a>
   ))
-  const current = NAV.find((n) => n.key === route)
+  const current = NAV.find((n) => n.key === route) || { label: route === 'signup' ? 'Create account' : route === 'reset' ? 'Reset password' : 'Sign in' }
 
   return (
     <div className="app">
@@ -52,7 +63,7 @@ export default function App() {
       <aside className="sidebar">
         <Brand />
         <nav className="sidenav" aria-label="Main">{links('sidenav-link')}</nav>
-        <p className="sidebar-foot">Your data stays in this browser.</p>
+        <p className="sidebar-foot">{!configured ? 'Cloud accounts are not set up.' : loading ? '' : user ? 'Your journal is synced to your SNFX Cloud account.' : 'Sign in to save your journal to the cloud.'}</p>
       </aside>
 
       <div className="shell">
@@ -63,12 +74,16 @@ export default function App() {
           </div>
           <div className="topbar-actions">
             <MarketStatus />
+            <AccountMenu />
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
         </header>
 
         <main id="main" tabIndex={-1} className="content">
-          {route === 'journal' && <div className="page page-enter"><TradingJournal /></div>}
+          {route === 'journal' && <div className="page page-enter"><AuthGuard reason="Sign in to open your Trading Journal."><TradingJournal /></AuthGuard></div>}
+          {route === 'login' && <div className="page page-enter"><Login /></div>}
+          {route === 'signup' && <div className="page page-enter"><Signup /></div>}
+          {route === 'reset' && <div className="page page-enter"><ResetPassword /></div>}
           {route === 'calculator' && (
             <div className="page page-enter">
               <header className="page-head">

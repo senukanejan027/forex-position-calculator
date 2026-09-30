@@ -5,16 +5,18 @@ const EXIT_MS = 160
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
 // `footer` may be a node or a function receiving `close`, so footer buttons get the same exit animation.
-export default function Modal({ title, onClose, children, footer, wide }) {
+export default function Modal({ title, onClose, children, footer, wide, dismissible = true }) {
   const titleId = useId()
   const [closing, setClosing] = useState(false)
   const dialogRef = useRef(null)
   const onCloseRef = useRef(onClose)
   const timer = useRef(null)
+  const dismissRef = useRef(dismissible)
   onCloseRef.current = onClose
+  dismissRef.current = dismissible
 
   const close = useCallback(() => {
-    if (timer.current) return
+    if (timer.current || !dismissRef.current) return
     setClosing(true)
     timer.current = setTimeout(() => onCloseRef.current(), EXIT_MS)
   }, [])
@@ -51,7 +53,7 @@ export default function Modal({ title, onClose, children, footer, wide }) {
       <div ref={dialogRef} tabIndex={-1} className={'modal' + (wide ? ' wide' : '')} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <div className="modal-head">
           <h3 id={titleId}>{title}</h3>
-          <button type="button" className="icon-btn" aria-label="Close dialog" onClick={close}><X size={18} aria-hidden="true" /></button>
+          {dismissible && <button type="button" className="icon-btn" aria-label="Close dialog" onClick={close}><X size={18} aria-hidden="true" /></button>}
         </div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-footer">{typeof footer === 'function' ? footer(close) : footer}</div>}

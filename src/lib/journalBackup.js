@@ -47,7 +47,8 @@ export function parseBackup(text) {
     accountBalance: bal !== null && bal > 0 ? bal : DEFAULT_SETTINGS.accountBalance,
     currency: typeof s.currency === 'string' && /^[A-Za-z]{3}$/.test(s.currency) ? s.currency.toUpperCase() : DEFAULT_SETTINGS.currency,
   }
-  return { ok: true, backup: { trades: obj.trades.map(normalizeTrade), settings } }
+  // `raw` keeps the file's original records so the cloud import can validate numbers before normalising turns bad values into null.
+  return { ok: true, backup: { trades: obj.trades.map(normalizeTrade), raw: obj.trades, settings } }
 }
 
 // Adds incoming trades whose ID is not already present. Never removes anything.

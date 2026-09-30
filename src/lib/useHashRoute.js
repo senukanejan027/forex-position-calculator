@@ -5,6 +5,9 @@ export function routeFromHash(hash) {
   const h = hash.replace(/^#\/?/, '')
   if (h.startsWith('journal')) return 'journal'
   if (h.startsWith('economic-calendar')) return 'calendar'
+  if (h.startsWith('login')) return 'login'
+  if (h.startsWith('signup')) return 'signup'
+  if (h.startsWith('reset')) return 'reset'
   return 'calculator'
 }
 const read = () => routeFromHash(window.location.hash)

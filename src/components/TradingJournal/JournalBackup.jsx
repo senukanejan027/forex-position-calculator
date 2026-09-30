@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { CircleAlert, Download, GitMerge, Trash2, Upload } from 'lucide-react'
+import { CircleAlert, Download, GitMerge, HardDrive, Trash2, Upload } from 'lucide-react'
 import { useToast } from '../Toast'
+import SyncStatus from '../SyncStatus'
 import { CURRENCIES } from '../../data/journalDefaults'
 import { toNum } from '../../lib/journalCalculations'
 import { buildBackup, backupFilename, parseBackup, saveBackupFile } from '../../lib/journalBackup'
@@ -9,7 +10,10 @@ import { ConfirmDialog } from './Modal'
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never')
 
-export default function JournalBackup({ data, storage, onReplace, onMerge, onClear, onSettings, onExported }) {
+// Same wording everywhere an import finishes.
+const importSummary = (r) => `Imported: ${r.imported}. Skipped duplicates: ${r.skipped}. Invalid: ${r.invalid}.`
+
+export default function JournalBackup({ data, storage, user, sync, onRetry, legacy, onImportLocal, onReplace, onMerge, onClear, onSettings, onExported }) {
   const toast = useToast()
   const fileRef = useRef(null)
   const modeRef = useRef('replace')
@@ -28,10 +32,15 @@ export default function JournalBackup({ data, storage, onReplace, onMerge, onCle
     const res = parseBackup(text)
     if (!res.ok) return setMsg({ type: 'error', text: res.error })
     if (modeRef.current === 'merge') {
-      const r = onMerge(res.backup.trades)
+      const r = await onMerge(res.backup.raw)
       setMsg(null)
-      toast.success(`${plural(r.imported, 'trade')} imported. ${plural(r.skipped, 'duplicate trade')} skipped.`)
+      reportImport(r)
     } else setPending(res.backup)
+  }
+
+  const reportImport = (r) => {
+    if (r.pending) toast.warning(`${importSummary(r)} Changes are saved on this device and will upload when SNFX Cloud is reachable.`)
+    else toast.success(importSummary(r))
   }
 
   const doExport = async () => {
@@ -43,13 +52,29 @@ export default function JournalBackup({ data, storage, onReplace, onMerge, onCle
 
   return (
     <>
+      <section className="card cloud-card" aria-labelledby="cloud-title">
+        <h3 className="card-title" id="cloud-title">Cloud Account</h3>
+        <dl className="cloud-list">
+          <div><dt>Connected as</dt><dd className="cloud-email">{user.email}</dd></div>
+          <div><dt>Cloud Sync</dt><dd><SyncStatus status={sync.status} pending={sync.pending} message={sync.message} onRetry={onRetry} /></dd></div>
+          <div><dt>Local Storage</dt><dd>{storage.ok ? 'Enabled' : 'Unavailable'}</dd></div>
+        </dl>
+        {legacy.count > 0 && (
+          <div className="cloud-legacy">
+            <HardDrive size={18} aria-hidden="true" />
+            <p>{plural(legacy.count, 'trade')} from before cloud sync {legacy.count === 1 ? 'is' : 'are'} still stored in this browser{legacy.done ? ' and have been imported.' : '.'}</p>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onImportLocal}><Upload size={15} aria-hidden="true" />{legacy.done ? 'Import again' : 'Import local trades'}</button>
+          </div>
+        )}
+      </section>
+
       <section className="card">
         <h3 className="card-title">Data &amp; Backup</h3>
-        <p className="muted">Your journal is stored locally in this browser. Export a backup regularly to keep a copy of your trading history. It is not synced to GitHub or the cloud, and clearing site data in your browser will remove it.</p>
+        <p className="muted">Your trades are saved to your SNFX Cloud account and cached in this browser. A backup file is still worth keeping: export one regularly, and import it to restore or merge trades. Backups contain only your own trades.</p>
         <div className="backup-status">
           <div><span className="stat-label">Last Backup</span><strong className="stat-figure">{fmtDate(data.settings.lastBackup)}</strong></div>
           <div><span className="stat-label">Saved Trades</span><strong className="stat-figure">{data.trades.length}</strong></div>
-          <div><span className="stat-label">Storage</span><strong className={'stat-figure ' + (storage.ok ? 'pos' : 'neg')}>{storage.ok ? 'Saving locally' : 'Not saving'}</strong></div>
+          <div><span className="stat-label">Local Storage</span><strong className={'stat-figure ' + (storage.ok ? 'pos' : 'neg')}>{storage.ok ? 'Enabled' : 'Unavailable'}</strong></div>
         </div>
         <div className="btn-row">
           <button type="button" className="btn btn-primary" onClick={doExport}><Download size={16} aria-hidden="true" />Export Backup</button>
@@ -78,13 +103,13 @@ export default function JournalBackup({ data, storage, onReplace, onMerge, onCle
         <ConfirmDialog title="Import Backup" confirmLabel="Import Backup"
           message={`Importing this backup will replace your current journal data. Continue? (${plural(pending.trades.length, 'trade')} in the file, ${plural(data.trades.length, 'trade')} currently saved.)`}
           onCancel={() => setPending(null)}
-          onConfirm={() => { onReplace(pending.trades, pending.settings); setMsg(null); toast.success(`${plural(pending.trades.length, 'trade')} imported`); setPending(null) }} />
+          onConfirm={async () => { const b = pending; setPending(null); setMsg(null); reportImport(await onReplace(b.raw, b.settings)) }} />
       )}
       {clearOpen && (
         <ConfirmDialog title="Clear Journal" danger confirmLabel="Delete Everything" requireText="DELETE"
-          message="Delete all trading journal data? This action cannot be undone unless you have a backup."
+          message="Delete all trades from your SNFX Cloud account? This action cannot be undone unless you have a backup."
           onCancel={() => setClearOpen(false)}
-          onConfirm={() => { onClear(); setClearOpen(false); setMsg(null); toast.success('Journal cleared') }} />
+          onConfirm={async () => { setClearOpen(false); setMsg(null); const r = await onClear(); if (r && r.pending) toast.warning('Journal cleared on this device. The cloud copy will be cleared when SNFX Cloud is reachable.'); else toast.success('Journal cleared') }} />
       )}
     </>
   )

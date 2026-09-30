@@ -1,10 +1,13 @@
-import { useMemo, useRef, useState } from 'react'
-import { CircleAlert, Plus } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Plus } from 'lucide-react'
 import { useToast } from '../Toast'
-import { createStore, addTrade, updateTrade, deleteTrade } from '../../lib/journalStorage'
+import { useAuth } from '../../context/AuthContext'
+import useCloudJournal from '../../hooks/useCloudJournal'
 import { filterTrades } from '../../lib/journalCalculations'
-import { mergeTrades } from '../../lib/journalBackup'
-import { DEFAULT_SETTINGS } from '../../data/journalDefaults'
+import { readLegacy, getMigrationFlag, setMigrationFlag } from '../../lib/journalCache'
+import { createStore } from '../../lib/journalStorage'
+import SyncStatus from '../SyncStatus'
+import MigrationPrompt from './MigrationPrompt'
 import TradeForm from './TradeForm'
 import TradeFilters, { EMPTY_FILTERS } from './TradeFilters'
 import TradeTable, { TradeDetail } from './TradeTable'
@@ -16,36 +19,51 @@ import { ConfirmDialog } from './Modal'
 
 const TABS = ['Journal', 'Statistics', 'Performance', 'Data & Backup']
 
+const Skeleton = () => (
+  <div className="card skeleton-card" role="status" aria-label="Loading your trades">
+    {[0, 1, 2, 3, 4].map((i) => <span key={i} className="sk sk-row" />)}
+  </div>
+)
+
 export default function TradingJournal() {
   const toast = useToast()
-  const store = useMemo(() => createStore(), [])
-  const initial = useMemo(() => store.load(), [store])
-  const [data, setData] = useState(initial.data)
-  const [storage, setStorage] = useState({ ok: !initial.blocked, error: initial.error })
-  const dataRef = useRef(initial.data)
+  const { user } = useAuth()
+  const journal = useCloudJournal(user.id)
+  const data = useMemo(() => ({ trades: journal.trades, settings: journal.settings }), [journal.trades, journal.settings])
+  const storageOk = useMemo(() => createStore().isAvailable(), [])
+  const storage = { ok: storageOk, error: null }
+  const sync = { status: journal.status, pending: journal.pending, message: journal.message }
   const [tab, setTab] = useState('Journal')
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [editing, setEditing] = useState(null) // null | 'new' | trade
   const [viewing, setViewing] = useState(null)
   const [deleting, setDeleting] = useState(null)
 
-  // Single write path: update state, then persist. Never persists when storage is blocked.
-  const commit = (next) => {
-    dataRef.current = next
-    setData(next)
-    if (initial.blocked) return
-    const r = store.save(next)
-    setStorage({ ok: r.ok, error: r.ok ? null : r.error })
-  }
+  // Trades saved in this browser before cloud sync existed. Offered once per account, never deleted.
+  const legacy = useMemo(() => readLegacy().trades, [])
+  const [migFlag, setMigFlag] = useState(() => getMigrationFlag(user.id))
+  const [migOpen, setMigOpen] = useState(false)
+  const asked = useRef(false)
+  useEffect(() => {
+    // Only ask after the cloud list has loaded, so duplicates can be detected against it.
+    if (journal.fetched && legacy.length && !migFlag && !asked.current) { asked.current = true; setMigOpen(true) }
+  }, [journal.fetched, legacy.length, migFlag])
+  const finishMigration = (v) => { setMigrationFlag(user.id, v); setMigFlag(v); setMigOpen(false) }
+
   const currency = data.settings.currency
   const shown = useMemo(() => filterTrades(data.trades, filters), [data.trades, filters])
 
-  const saveTrade = (t) => {
-    const cur = dataRef.current
-    const exists = cur.trades.some((x) => x.id === t.id)
-    commit({ ...cur, trades: exists ? updateTrade(cur.trades, t.id, t) : addTrade(cur.trades, t) })
+  // Changes show instantly; the toast reports what actually happened once the sync attempt finishes.
+  const report = (res, okText) => {
+    if (!res.pending) toast.success(okText)
+    else if (res.kind === 'network') toast.warning('Saved on this device. It will sync when SNFX Cloud is reachable.')
+    else if (res.kind === 'session') toast.error(res.message)
+    else toast.error(res.message || 'Unable to save this trade. Please try again.')
+  }
+  const saveTrade = async (t) => {
+    const exists = journal.trades.some((x) => x.id === t.id)
     setEditing(null)
-    toast.success(exists ? 'Trade updated' : 'Trade saved')
+    report(await journal.saveTrade(t), exists ? 'Trade updated' : 'Trade saved')
   }
 
   return (
@@ -55,14 +73,15 @@ export default function TradingJournal() {
           <h1>Trading Journal</h1>
           <p>Log trades, review your results and track your edge.</p>
         </div>
-        <div className="tabs" role="tablist" aria-label="Journal sections">
-          {TABS.map((t) => (
-            <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>
-          ))}
+        <div className="journal-tools">
+          <SyncStatus {...sync} onRetry={journal.retry} />
+          <div className="tabs" role="tablist" aria-label="Journal sections">
+            {TABS.map((t) => (
+              <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>
+            ))}
+          </div>
         </div>
       </header>
-
-      {storage.error && <div className="alert alert-error" role="alert"><CircleAlert size={18} aria-hidden="true" /><span>{storage.error}</span></div>}
 
       {tab === 'Journal' && (
         <>
@@ -73,8 +92,8 @@ export default function TradingJournal() {
             <div className="toolbar"><button type="button" className="btn btn-primary" onClick={() => setEditing('new')}><Plus size={17} aria-hidden="true" />Add Trade</button></div>
           )}
           <TradeFilters filters={filters} onChange={setFilters} trades={data.trades} shown={shown.length} />
-          <TradeTable trades={shown} total={data.trades.length} currency={currency} onAdd={() => setEditing('new')} onView={setViewing}
-            onEdit={(t) => { setViewing(null); setEditing(t); window.scrollTo({ top: 0, behavior: 'smooth' }) }} onDelete={setDeleting} />
+          {journal.loading ? <Skeleton /> : <TradeTable trades={shown} total={data.trades.length} currency={currency} onAdd={() => setEditing('new')} onView={setViewing}
+            onEdit={(t) => { setViewing(null); setEditing(t); window.scrollTo({ top: 0, behavior: 'smooth' }) }} onDelete={setDeleting} />}
         </>
       )}
       {tab === 'Statistics' && <JournalStatistics trades={data.trades} currency={currency} />}
@@ -85,12 +104,13 @@ export default function TradingJournal() {
         </>
       )}
       {tab === 'Data & Backup' && (
-        <JournalBackup data={data} storage={storage}
-          onReplace={(trades, settings) => commit({ ...dataRef.current, trades, settings: { ...dataRef.current.settings, ...settings } })}
-          onMerge={(incoming) => { const r = mergeTrades(dataRef.current.trades, incoming); commit({ ...dataRef.current, trades: r.trades }); return r }}
-          onClear={() => commit({ ...dataRef.current, trades: [], settings: { ...DEFAULT_SETTINGS, ...dataRef.current.settings } })}
-          onSettings={(patch) => commit({ ...dataRef.current, settings: { ...dataRef.current.settings, ...patch } })}
-          onExported={(iso) => commit({ ...dataRef.current, settings: { ...dataRef.current.settings, lastBackup: iso } })} />
+        <JournalBackup data={data} storage={storage} user={user} sync={sync} onRetry={journal.retry}
+          legacy={{ count: legacy.length, done: migFlag === 'done' }} onImportLocal={() => setMigOpen(true)}
+          onReplace={async (trades, settings) => { journal.updateSettings(settings); return journal.importBatch(trades, { mode: 'replace' }) }}
+          onMerge={(incoming) => journal.importBatch(incoming, { mode: 'merge' })}
+          onClear={() => journal.clearAll()}
+          onSettings={journal.updateSettings}
+          onExported={(iso) => journal.updateSettings({ lastBackup: iso })} />
       )}
 
       {viewing && <TradeDetail trade={viewing} currency={currency} onClose={() => setViewing(null)}
@@ -99,7 +119,13 @@ export default function TradingJournal() {
         <ConfirmDialog title="Delete Trade" danger confirmLabel="Delete Trade"
           message={`Delete the ${deleting.pair} ${deleting.direction} trade from ${deleting.date}? This cannot be undone.`}
           onCancel={() => setDeleting(null)}
-          onConfirm={() => { commit({ ...dataRef.current, trades: deleteTrade(dataRef.current.trades, deleting.id) }); setDeleting(null); toast.success('Trade deleted') }} />
+          onConfirm={async () => { const id = deleting.id; setDeleting(null); report(await journal.removeTrade(id), 'Trade deleted') }} />
+      )}
+      {migOpen && (
+        <MigrationPrompt count={legacy.length}
+          onImport={async (onProgress) => { const r = await journal.importBatch(legacy, { mode: 'merge', onProgress }); if (!r.pending) setMigrationFlag(user.id, 'done'); return r }}
+          onSkip={() => finishMigration('skipped')}
+          onDone={() => { if (getMigrationFlag(user.id) === 'done') setMigFlag('done'); setMigOpen(false) }} />
       )}
     </div>
   )
