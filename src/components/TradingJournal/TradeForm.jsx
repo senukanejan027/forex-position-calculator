@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CircleAlert, Save } from 'lucide-react'
 import { PAIRS, DIRECTIONS, JOURNAL_SESSIONS, RESULTS, TIMEFRAMES, NUMERIC_FIELDS } from '../../data/journalDefaults'
 import { calcRiskAmount, calcRR, calcR, toNum, localYMD } from '../../lib/journalCalculations'
 import { normalizeTrade } from '../../lib/journalStorage'
@@ -49,6 +50,7 @@ export default function TradeForm({ initial, settings, onSave, onCancel }) {
     return Object.fromEntries(DERIVED.map((k) => [k, f[k] !== '' && f[k] !== auto[k]]))
   })
   const [error, setError] = useState('')
+  const [errKey, setErrKey] = useState('')
 
   const set = (k, v) => {
     const t = DERIVED.includes(k) ? { ...touched, [k]: v !== '' } : touched
@@ -58,8 +60,8 @@ export default function TradeForm({ initial, settings, onSave, onCancel }) {
 
   const submit = (e) => {
     e.preventDefault()
-    if (!form.date) return setError('Enter a date.')
-    if (!form.pair.trim()) return setError('Enter a currency pair.')
+    if (!form.date) { setErrKey('date'); return setError('Enter a date.') }
+    if (!form.pair.trim()) { setErrKey('pair'); return setError('Enter a currency pair.') }
     const raw = { ...form }
     NUMERIC_FIELDS.forEach((k) => { raw[k] = toNum(form[k]) })
     if (initial) raw.id = initial.id
@@ -68,7 +70,7 @@ export default function TradeForm({ initial, settings, onSave, onCancel }) {
 
   const text = (k, label, props = {}) => (
     <div className="field"><label htmlFor={'tf-' + k}>{label}</label>
-      <div className="control"><input id={'tf-' + k} value={form[k]} onChange={(e) => set(k, e.target.value)} {...props} /></div></div>
+      <div className={'control' + (errKey === k ? ' has-error' : '')}><input id={'tf-' + k} value={form[k]} aria-invalid={errKey === k ? 'true' : undefined} onChange={(e) => set(k, e.target.value)} {...props} /></div></div>
   )
   const num = (k, label) => text(k, label, { type: 'number', step: 'any', inputMode: 'decimal' })
   const select = (k, label, opts, blank) => (
@@ -84,7 +86,7 @@ export default function TradeForm({ initial, settings, onSave, onCancel }) {
 
   return (
     <form className="card tj-form" onSubmit={submit} noValidate>
-      <h3>{initial ? 'Edit Trade' : 'Add Trade'}</h3>
+      <div className="card-head"><h3 className="card-title">{initial ? 'Edit Trade' : 'Add Trade'}</h3></div>
       <fieldset><legend>Basic information</legend>
         <div className="fgrid">
           <div className="field"><label htmlFor="tf-id">Trade ID</label>
@@ -92,7 +94,7 @@ export default function TradeForm({ initial, settings, onSave, onCancel }) {
           {text('date', 'Date', { type: 'date' })}
           {text('time', 'Time', { type: 'time' })}
           <div className="field"><label htmlFor="tf-pair">Pair</label>
-            <div className="control"><input id="tf-pair" list="tj-pairs" value={form.pair} autoCapitalize="characters"
+            <div className={'control' + (errKey === 'pair' ? ' has-error' : '')}><input id="tf-pair" list="tj-pairs" value={form.pair} autoCapitalize="characters" aria-invalid={errKey === 'pair' ? 'true' : undefined}
               onChange={(e) => set('pair', e.target.value.toUpperCase())} /></div>
             <datalist id="tj-pairs">{PAIRS.map((p) => <option key={p} value={p} />)}</datalist></div>
           {select('direction', 'Direction', DIRECTIONS)}
@@ -117,10 +119,10 @@ export default function TradeForm({ initial, settings, onSave, onCancel }) {
           {area('reason', 'Setup / Reason for entry')}{area('wentWell', 'What went well')}{area('wentWrong', 'What went wrong')}
           {area('lessons', 'Lessons learned')}{area('notes', 'Additional notes')}
         </div></fieldset>
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p className="error" role="alert"><CircleAlert size={14} aria-hidden="true" />{error}</p>}
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary">{initial ? 'Save Changes' : 'Save Trade'}</button>
-        <button type="button" className="btn" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="btn btn-primary"><Save size={16} aria-hidden="true" />{initial ? 'Save Changes' : 'Save Trade'}</button>
+        <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancel</button>
       </div>
     </form>
   )

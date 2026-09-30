@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { ExternalLink } from 'lucide-react'
 import './economicCalendar.css'
 
 // Edit the widget here. Myfxbook's official embed, loaded straight from the browser.
@@ -18,7 +19,7 @@ export default function EconomicCalendar() {
 
   return (
     <section className="ecal" aria-labelledby="ecal-title">
-      <header className="ecal-head">
+      <header className="page-head ecal-head">
         <h1 id="ecal-title">Economic Calendar</h1>
         <p><strong>Live Forex Economic Events</strong><span> Real-time market events and economic releases</span></p>
       </header>
@@ -44,7 +45,7 @@ export default function EconomicCalendar() {
       </div>
 
       <p className="ecal-credit">
-        <a href={MYFXBOOK_URL} title="Economic Calendar" target="_blank" rel="noopener"><b>Economic Calendar</b></a> by Myfxbook.com
+        <a href={MYFXBOOK_URL} title="Economic Calendar" target="_blank" rel="noopener"><b>Economic Calendar</b><ExternalLink size={12} aria-hidden="true" /></a> by Myfxbook.com
       </p>
     </section>
   )

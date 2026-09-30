@@ -1,8 +1,11 @@
-export default function InputField({ id, label, value, onChange, error, suffix, placeholder, step = 'any' }) {
+import { CircleAlert } from 'lucide-react'
+
+export default function InputField({ id, label, value, onChange, error, suffix, placeholder, icon: Icon, step = 'any' }) {
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <div className={'control' + (error ? ' has-error' : '')}>
+      <div className={'control' + (error ? ' has-error' : '') + (Icon ? ' has-icon' : '')}>
+        {Icon && <Icon className="control-icon" size={17} aria-hidden="true" />}
         <input
           id={id}
           type="number"
@@ -18,7 +21,7 @@ export default function InputField({ id, label, value, onChange, error, suffix, 
         />
         {suffix && <span className="suffix">{suffix}</span>}
       </div>
-      {error && <p className="error" id={id + '-err'} role="alert">{error}</p>}
+      {error && <p className="error" id={id + '-err'} role="alert"><CircleAlert size={14} aria-hidden="true" />{error}</p>}
     </div>
   )
 }

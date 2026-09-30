@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { CircleAlert, Download, GitMerge, Trash2, Upload } from 'lucide-react'
+import { useToast } from '../Toast'
 import { CURRENCIES } from '../../data/journalDefaults'
 import { toNum } from '../../lib/journalCalculations'
 import { buildBackup, backupFilename, parseBackup, saveBackupFile } from '../../lib/journalBackup'
@@ -8,6 +10,7 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Never')
 
 export default function JournalBackup({ data, storage, onReplace, onMerge, onClear, onSettings, onExported }) {
+  const toast = useToast()
   const fileRef = useRef(null)
   const modeRef = useRef('replace')
   const [msg, setMsg] = useState(null)
@@ -26,39 +29,40 @@ export default function JournalBackup({ data, storage, onReplace, onMerge, onCle
     if (!res.ok) return setMsg({ type: 'error', text: res.error })
     if (modeRef.current === 'merge') {
       const r = onMerge(res.backup.trades)
-      setMsg({ type: 'ok', text: `${plural(r.imported, 'trade')} imported. ${plural(r.skipped, 'duplicate trade')} skipped.` })
+      setMsg(null)
+      toast.success(`${plural(r.imported, 'trade')} imported. ${plural(r.skipped, 'duplicate trade')} skipped.`)
     } else setPending(res.backup)
   }
 
   const doExport = async () => {
     const now = new Date()
     const r = await saveBackupFile(buildBackup(data, now), backupFilename(now))
-    if (r.ok) { onExported(now.toISOString()); setMsg({ type: 'ok', text: 'Backup exported.' }) }
+    if (r.ok) { onExported(now.toISOString()); setMsg(null); toast.success('Backup exported') }
     else if (!r.cancelled) setMsg({ type: 'error', text: r.error || 'The backup could not be saved.' })
   }
 
   return (
     <>
       <section className="card">
-        <h3 className="section-title">Data &amp; Backup</h3>
+        <h3 className="card-title">Data &amp; Backup</h3>
         <p className="muted">Your journal is stored locally in this browser. Export a backup regularly to keep a copy of your trading history. It is not synced to GitHub or the cloud, and clearing site data in your browser will remove it.</p>
         <div className="backup-status">
-          <div><span className="stat-label">Last Backup</span><strong>{fmtDate(data.settings.lastBackup)}</strong></div>
-          <div><span className="stat-label">Saved Trades</span><strong>{data.trades.length}</strong></div>
-          <div><span className="stat-label">Storage</span><strong className={storage.ok ? 'pos' : 'neg'}>{storage.ok ? 'Saving locally' : 'Not saving'}</strong></div>
+          <div><span className="stat-label">Last Backup</span><strong className="stat-figure">{fmtDate(data.settings.lastBackup)}</strong></div>
+          <div><span className="stat-label">Saved Trades</span><strong className="stat-figure">{data.trades.length}</strong></div>
+          <div><span className="stat-label">Storage</span><strong className={'stat-figure ' + (storage.ok ? 'pos' : 'neg')}>{storage.ok ? 'Saving locally' : 'Not saving'}</strong></div>
         </div>
         <div className="btn-row">
-          <button type="button" className="btn btn-primary" onClick={doExport}>Export Backup</button>
-          <button type="button" className="btn" onClick={() => pick('replace')}>Import Backup</button>
-          <button type="button" className="btn" onClick={() => pick('merge')}>Merge Backup</button>
-          <button type="button" className="btn btn-danger-ghost" onClick={() => setClearOpen(true)}>Clear Journal</button>
+          <button type="button" className="btn btn-primary" onClick={doExport}><Download size={16} aria-hidden="true" />Export Backup</button>
+          <button type="button" className="btn btn-secondary" onClick={() => pick('replace')}><Upload size={16} aria-hidden="true" />Import Backup</button>
+          <button type="button" className="btn btn-secondary" onClick={() => pick('merge')}><GitMerge size={16} aria-hidden="true" />Merge Backup</button>
+          <button type="button" className="btn btn-danger-ghost" onClick={() => setClearOpen(true)}><Trash2 size={16} aria-hidden="true" />Clear Journal</button>
         </div>
         <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={onFile} />
-        {msg && <p className={msg.type === 'error' ? 'error' : 'ok-msg'} role="status">{msg.text}</p>}
+        {msg && <div className="alert alert-error" role="alert"><CircleAlert size={18} aria-hidden="true" /><span>{msg.text}</span></div>}
       </section>
 
       <section className="card">
-        <h3 className="section-title">Journal Settings</h3>
+        <h3 className="card-title">Journal Settings</h3>
         <div className="fgrid">
           <div className="field"><label htmlFor="set-balance">Account Balance</label>
             <div className="control"><input id="set-balance" type="number" min="0" step="any" value={balance}
@@ -74,13 +78,13 @@ export default function JournalBackup({ data, storage, onReplace, onMerge, onCle
         <ConfirmDialog title="Import Backup" confirmLabel="Import Backup"
           message={`Importing this backup will replace your current journal data. Continue? (${plural(pending.trades.length, 'trade')} in the file, ${plural(data.trades.length, 'trade')} currently saved.)`}
           onCancel={() => setPending(null)}
-          onConfirm={() => { onReplace(pending.trades, pending.settings); setMsg({ type: 'ok', text: `${plural(pending.trades.length, 'trade')} imported.` }); setPending(null) }} />
+          onConfirm={() => { onReplace(pending.trades, pending.settings); setMsg(null); toast.success(`${plural(pending.trades.length, 'trade')} imported`); setPending(null) }} />
       )}
       {clearOpen && (
         <ConfirmDialog title="Clear Journal" danger confirmLabel="Delete Everything" requireText="DELETE"
           message="Delete all trading journal data? This action cannot be undone unless you have a backup."
           onCancel={() => setClearOpen(false)}
-          onConfirm={() => { onClear(); setClearOpen(false); setMsg({ type: 'ok', text: 'Journal cleared.' }) }} />
+          onConfirm={() => { onClear(); setClearOpen(false); setMsg(null); toast.success('Journal cleared') }} />
       )}
     </>
   )

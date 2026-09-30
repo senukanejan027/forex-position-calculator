@@ -1,4 +1,6 @@
 import { useMemo } from 'react'
+import { Layers } from 'lucide-react'
+import EmptyState from '../EmptyState'
 import { calculatePairStatistics, calculateSessionStatistics, calculateStrategyStatistics, fmtMoney, fmtR, fmtPct } from '../../lib/journalCalculations'
 import { JOURNAL_SESSIONS } from '../../data/journalDefaults'
 
@@ -7,9 +9,9 @@ const tone = (n) => (n > 0 ? 'pos' : n < 0 ? 'neg' : '')
 function Breakdown({ title, first, rows, currency, avgR }) {
   return (
     <section className="card table-card">
-      <h3 className="section-title pad">{title}</h3>
-      {rows.length === 0 ? <p className="empty">No completed trades yet.</p> : (
-        <table className="tbl">
+      <h3 className="card-title pad">{title}</h3>
+      {rows.length === 0 ? <EmptyState icon={Layers} title="No completed trades yet" compact>Results will be broken down here once trades are closed.</EmptyState> : (
+        <div className="table-scroll"><table className="tbl">
           <thead><tr>{[first, 'Trades', 'Wins', 'Losses', 'Win Rate', 'P/L', ...(avgR ? ['Average R'] : []), 'Total R'].map((h) => <th key={h}>{h}</th>)}</tr></thead>
           <tbody>
             {rows.map((r) => (
@@ -23,7 +25,7 @@ function Breakdown({ title, first, rows, currency, avgR }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </section>
   )

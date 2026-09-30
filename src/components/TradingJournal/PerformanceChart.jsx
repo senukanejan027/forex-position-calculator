@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { LineChart as ChartIcon } from 'lucide-react'
+import EmptyState from '../EmptyState'
 import { calculateEquityCurve, fmtMoney, fmtR } from '../../lib/journalCalculations'
 
 const W = 640, H = 240, P = { l: 56, r: 16, t: 16, b: 26 }
@@ -19,15 +21,15 @@ export default function PerformanceChart({ trades, currency }) {
 
   return (
     <section className="card">
-      <div className="chart-head">
-        <h3 className="section-title">Equity Curve</h3>
+      <div className="card-head">
+        <h3 className="card-title">Equity Curve</h3>
         <div className="seg" role="group" aria-label="Chart metric">
           <button type="button" className={mode === 'pnl' ? 'on' : ''} aria-pressed={mode === 'pnl'} onClick={() => setMode('pnl')}>P/L</button>
           <button type="button" className={mode === 'r' ? 'on' : ''} aria-pressed={mode === 'r'} onClick={() => setMode('r')}>R-Multiple</button>
         </div>
       </div>
       {pts.length < 2 ? (
-        <p className="empty">Completed trades with {mode === 'r' ? 'an R-multiple' : 'a P/L value'} will appear here.</p>
+        <EmptyState icon={ChartIcon} title="Not enough data yet" compact>Completed trades with {mode === 'r' ? 'an R-multiple' : 'a P/L value'} will appear here.</EmptyState>
       ) : (
         <>
           <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Cumulative ${mode === 'r' ? 'R' : 'P/L'} over ${pts.length - 1} trades, ending at ${fmt(last)}`}>

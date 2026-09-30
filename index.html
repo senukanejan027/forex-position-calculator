@@ -1,15 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#070709" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0e13" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="description" content="Calculate your forex position size based on account risk and stop loss." />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <title>SNFX Beta - Position Size Calculator</title>
+    <!-- Sets the theme before first paint so there is no flash. Saved choice wins, then the OS preference. -->
+    <script>
+      (function () {
+        var t = 'dark';
+        try {
+          var s = localStorage.getItem('snfx-theme');
+          if (s === 'light' || s === 'dark') t = s;
+          else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
+        } catch (e) {}
+        document.documentElement.setAttribute('data-theme', t);
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', t === 'light' ? '#f2f5f9' : '#0a0e13');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

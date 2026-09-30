@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
+import { CircleAlert, Plus } from 'lucide-react'
+import { useToast } from '../Toast'
 import { createStore, addTrade, updateTrade, deleteTrade } from '../../lib/journalStorage'
 import { filterTrades } from '../../lib/journalCalculations'
 import { mergeTrades } from '../../lib/journalBackup'
@@ -15,6 +17,7 @@ import { ConfirmDialog } from './Modal'
 const TABS = ['Journal', 'Statistics', 'Performance', 'Data & Backup']
 
 export default function TradingJournal() {
+  const toast = useToast()
   const store = useMemo(() => createStore(), [])
   const initial = useMemo(() => store.load(), [store])
   const [data, setData] = useState(initial.data)
@@ -42,23 +45,24 @@ export default function TradingJournal() {
     const exists = cur.trades.some((x) => x.id === t.id)
     commit({ ...cur, trades: exists ? updateTrade(cur.trades, t.id, t) : addTrade(cur.trades, t) })
     setEditing(null)
+    toast.success(exists ? 'Trade updated' : 'Trade saved')
   }
 
   return (
     <div className="journal">
-      <div className="journal-head">
+      <header className="page-head journal-head">
         <div>
           <h1>Trading Journal</h1>
-          <p className="muted">Log trades, review your results and track your edge.</p>
+          <p>Log trades, review your results and track your edge.</p>
         </div>
         <div className="tabs" role="tablist" aria-label="Journal sections">
           {TABS.map((t) => (
             <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{t}</button>
           ))}
         </div>
-      </div>
+      </header>
 
-      {storage.error && <div className="banner" role="alert">{storage.error}</div>}
+      {storage.error && <div className="alert alert-error" role="alert"><CircleAlert size={18} aria-hidden="true" /><span>{storage.error}</span></div>}
 
       {tab === 'Journal' && (
         <>
@@ -66,10 +70,10 @@ export default function TradingJournal() {
             <TradeForm key={editing === 'new' ? 'new' : editing.id} initial={editing === 'new' ? null : editing}
               settings={data.settings} onSave={saveTrade} onCancel={() => setEditing(null)} />
           ) : (
-            <div className="toolbar"><button type="button" className="btn btn-primary" onClick={() => setEditing('new')}>Add Trade</button></div>
+            <div className="toolbar"><button type="button" className="btn btn-primary" onClick={() => setEditing('new')}><Plus size={17} aria-hidden="true" />Add Trade</button></div>
           )}
           <TradeFilters filters={filters} onChange={setFilters} trades={data.trades} shown={shown.length} />
-          <TradeTable trades={shown} currency={currency} onView={setViewing}
+          <TradeTable trades={shown} total={data.trades.length} currency={currency} onAdd={() => setEditing('new')} onView={setViewing}
             onEdit={(t) => { setViewing(null); setEditing(t); window.scrollTo({ top: 0, behavior: 'smooth' }) }} onDelete={setDeleting} />
         </>
       )}
@@ -95,7 +99,7 @@ export default function TradingJournal() {
         <ConfirmDialog title="Delete Trade" danger confirmLabel="Delete Trade"
           message={`Delete the ${deleting.pair} ${deleting.direction} trade from ${deleting.date}? This cannot be undone.`}
           onCancel={() => setDeleting(null)}
-          onConfirm={() => { commit({ ...dataRef.current, trades: deleteTrade(dataRef.current.trades, deleting.id) }); setDeleting(null) }} />
+          onConfirm={() => { commit({ ...dataRef.current, trades: deleteTrade(dataRef.current.trades, deleting.id) }); setDeleting(null); toast.success('Trade deleted') }} />
       )}
     </div>
   )

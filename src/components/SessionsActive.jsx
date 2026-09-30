@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Clock } from 'lucide-react'
 import { getSessionStatuses, formatClock12 } from '../lib/sessions'
 
 function useNow(intervalMs = 1000) {
@@ -15,10 +16,10 @@ export default function SessionsActive() {
   const sessions = useMemo(() => getSessionStatuses(now), [Math.floor(now / 1000)]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section className="sessions" aria-label="Forex sessions">
-      <div className="sessions-head">
-        <h2>Sessions Active</h2>
-        <span className="sessions-clock">Sri Lanka Time: <time>{formatClock12(now)}</time></span>
+    <section className="card sessions" aria-label="Forex sessions">
+      <div className="card-head">
+        <h2 className="card-title">Sessions Active</h2>
+        <span className="sessions-clock"><Clock size={14} aria-hidden="true" />Sri Lanka Time: <time>{formatClock12(now)}</time></span>
       </div>
       <ul className="sessions-list">
         {sessions.map((s) => (
@@ -26,7 +27,7 @@ export default function SessionsActive() {
             <span className="dot" aria-hidden="true" />
             <span className="session-name">{s.label}</span>
             <span className="session-time">{s.start} – {s.end}</span>
-            <span className="session-status">{s.active ? 'ACTIVE' : 'CLOSED'}</span>
+            <span className="session-status">{s.active ? 'Active' : 'Closed'}</span>
           </li>
         ))}
       </ul>
